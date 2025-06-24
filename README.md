@@ -47,11 +47,14 @@ $ send_to_itms --sample <送付するサンプルID>
 |--directory/-d |False    |解析フォルダの親ディレクトリ                    |/data1/data/result |
 |--transfer/-t  |False    |転送用のデータセット出力先                      |/data1/work/send_to_ITMS |
 
-**\*--listfile または --sample のいずれか1つを指定する** \
-検査種別は混合しても問題ないが、M3検体かどうかの判別は行わないので、\<TRANSFER\>/\<timestamp\>.idx で不要な検体が含まれていないかを確認する。\
-指定された Sample ID の解析データのうち、**データベースで最新**のもの（gc_history_logのidxが最大値）を検索して転送用データセットを作成する。\
-⇒ \<TRANSFER\>/\<timestamp\>/GxD に既定のディレクトリ構造でシンボリックリンクが作成される。\
-&ensp;&ensp;&ensp;\<TRANSFER\>/\<timestamp\>/checksum.txt に各ファイルのチェックサムを書き出すジョブが投入される。\
-&ensp;&ensp;&ensp;\<TRANSFER\>/\<timestamp\>.idx に送付準備ができた batch, Sample ID, Customer Sample ID の一覧が作成される。\
-⇒ 投入された全てのジョブ完了を確認後、/media/usb/cap に送付用HDDがマウントされていることを確認し、\
-&ensp;&ensp;&ensp;rsync -avLzu コマンドで解析データの転送と、\<TRANSFER\>/\<timestamp\>/checksum.txt の /media/usb/cap/checksum.txt への追記を実施する。
+**\*--listfile または --sample のいずれか1つを指定すること**\
+検査種別は混合していても問題ないが、M3検体かどうかの判別は行わないため、\<TRANSFER\>/\<timestamp\>.idx で不要な検体が含まれていないかを確認する。
+
+指定された Sample ID の解析データのうち、**データベースで最新**のもの（gc_history_logのidxが最大値）を検索して以下の挙動を示す。
+- \<TRANSFER\>/\<timestamp\>/GxD に既定のディレクトリ構造でシンボリックリンクを作成する。
+- \<TRANSFER\>/\<timestamp\>/checksum.txt に各ファイルのチェックサムを書き出すジョブを投入する。
+- \<TRANSFER\>/\<timestamp\>.idx に送付準備ができた batch, Sample ID, Customer Sample ID の一覧を作成する。
+
+⇒ 全ての検体に対してジョブが投入されたら、rsync -avLzu コマンドで解析データを送付用HDDへ転送する。\
+（データ転送には時間がかかるので、nohupでのバックグラウンド実行を推奨）\
+⇒ すべてのジョブが完了したら、\<TRANSFER\>/\<timestamp\>/checksum.txt の /media/usb/cap/checksum.txt への追記を実施する。

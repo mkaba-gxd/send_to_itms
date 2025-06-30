@@ -70,7 +70,7 @@ def run_sendData(args):
             SUM = []
             for subname in ['cnv.exome', 'msi.exome', 'snv.exome', 'snv.target', 'tmb.exome'] :
                 SUM.append(os.path.join(rawDir,'Summary','.'.join([item['sample_id'],'summarized',subname,'tsv'])))
-            FILES = [ FQ1, FQ2, BAM, VCF ] + SUM
+            FILES = [ FQ1, FQ2, BAM, VCF, JSON ] + SUM
 
         elif item['anal_type'] == 'WTS':
             linkDir = os.path.join(transfer, now_str, 'GxD', item['patient_no'], item['timepoint'], 'WTS')
@@ -81,7 +81,7 @@ def run_sendData(args):
             SUM = []
             for subname in ['expression', 'fusion', 'splice'] :
                 SUM.append(os.path.join(rawDir,'Summary','.'.join([item['sample_id'],'summarized',subname,'tsv'])))
-            FILES = [ FQ1, FQ2, BAM ] + SUM
+            FILES = [ FQ1, FQ2, BAM, JSON ] + SUM
 
         else :
             df_drop = df_drop[ df_drop['sample_id']!=item['sample_id'] ]

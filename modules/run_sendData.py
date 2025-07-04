@@ -49,7 +49,8 @@ def run_sendData(args):
     if df_drop.shape[0] == 0 :
         init('No entries in database.')
     elif df.shape[0] != df_drop.shape[0] :
-        print('Some samples are missing data.')
+        missing = set(sample_id) - set(df_drop['sample_id'])
+        print('missing data: [' + ','.join(missing) + ']')
         choice = prompt_choice("Continue? (yes[Y]/no[N]):", ['yes', 'y', 'no', 'n'])
         if choice in ['no', 'n'] :
             init('Abort process.')

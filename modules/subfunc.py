@@ -32,7 +32,7 @@ def subname_query(sample_id):
     INNER JOIN gxd.gc_history_log ghl
     ON gqs.SAMPLE_ID = ghl.SAMPLE_ID
     AND ghl.idx = (SELECT MAX(idx) FROM gc_history_log WHERE SAMPLE_ID = gqs.SAMPLE_ID)
-    WHERE ghl.SAMPLE_ID = '{sample_id}'
+    WHERE ghl.SAMPLE_ID = '{sample_id}' AND ghl.ANAL_STATUS = '102'
     """
     return query
 

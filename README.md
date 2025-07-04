@@ -15,7 +15,7 @@ singularity exec --disable-cache --bind /data1 /data1/labTools/labTools.sif pyth
 ```
 usage を表示してエイリアスの設定を確認する。以下が表示されればOK。
 ```
-$ send_to_itms -h
+$ send_to_itms --help
 version: v2.1.0
 usage: send_to_itms.py [-h] [--listfile LISTFILE] [--sample SAMPLE] [--directory DIRECTORY]
                    [--transfer TRANSFER] [--version]
@@ -37,8 +37,8 @@ optional arguments:
 ## 実行方法
 --listfile でリストファイルを指定、または --sampleでSampleIDをコンマ区切りで指定する。
 ```
-$ send_to_itms --listfile <送付するサンプルリストファイルパス>
-$ send_to_itms --sample <送付するサンプルID>
+send_to_itms --listfile <送付するサンプルリストファイルパス>
+send_to_itms --sample <送付するサンプルID>
 ```
 | option        |required | 概要                                         |default            |
 |:--------------|:-------:|:---------------------------------------------|:------------------|

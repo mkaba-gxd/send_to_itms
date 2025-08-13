@@ -35,17 +35,19 @@ def run_sendData(args):
     anal_type = []
     timepoint = []
     patient_no = []
+    title = []
 
     for sample in sample_id :
-        b, a, t, p = search_info(sample, directory)
+        b, a, t, p, l = search_info(sample, directory)
         batch_id   += [b]
         anal_type  += [a]
         timepoint  += [t]
         patient_no += [p]
+        title      += [l]
 
-    df = pd.DataFrame(dict(batch_id=batch_id, sample_id=sample_id, anal_type=anal_type, timepoint=timepoint, patient_no=patient_no))
+    df = pd.DataFrame(dict(batch_id=batch_id, sample_id=sample_id, anal_type=anal_type, timepoint=timepoint, patient_no=patient_no, title=title))
+
     df_drop = df.dropna()
-
     if df_drop.shape[0] == 0 :
         init('No entries in database.')
     elif df.shape[0] != df_drop.shape[0] :
@@ -55,7 +57,17 @@ def run_sendData(args):
         if choice in ['no', 'n'] :
             init('Abort process.')
 
-    df_drop = df_drop.sort_values('patient_no').reset_index(drop=True)
+    df_M3 = df_drop[ df_drop['title']=='MONSTAR-SCREEN-3' ]
+    if df_M3.shape[0] == 0 :
+        init('No match for M3 sample')
+    elif df_drop.shape[0] != df_M3.shape[0] :
+        missing = set(df_drop['sample_id']) - set(df_M3['sample_id'])
+        print('Sample not M3: [' + ','.join(missing) + ']')
+        choice = prompt_choice("Continue? (yes[Y]/no[N]):", ['yes', 'y', 'no', 'n'])
+        if choice in ['no', 'n'] :
+            init('Abort process.')
+
+    df_drop = df_M3.sort_values('patient_no').reset_index(drop=True)
 
     for i, item in df_drop.iterrows() :
 

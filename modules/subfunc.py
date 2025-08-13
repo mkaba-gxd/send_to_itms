@@ -21,7 +21,7 @@ def getinfo(sample_id):
 
 def subname_query(sample_id):
     query = f"""
-    SELECT concat(tesh.equip_side, tesh.fc_id) AS sub_name, tol.timepoint, gp.PATIENT_NO, gp.PRJ_TYPE
+    SELECT concat(tesh.equip_side, tesh.fc_id) AS sub_name, tol.timepoint, gp.PATIENT_NO, gp.PRJ_TYPE, cctm.CLINICAL_TRIAL_NAME
     FROM gxd.tb_expr_seq_header tesh
     INNER JOIN gxd.gc_qc_sample gqs
     ON tesh.run_id = gqs.run_id
@@ -32,6 +32,12 @@ def subname_query(sample_id):
     INNER JOIN gxd.gc_history_log ghl
     ON gqs.SAMPLE_ID = ghl.SAMPLE_ID
     AND ghl.idx = (SELECT MAX(idx) FROM gc_history_log WHERE SAMPLE_ID = gqs.SAMPLE_ID)
+    LEFT OUTER JOIN gxd.tb_order_header toh
+    ON tol.order_header_id = toh.order_header_id
+    LEFT OUTER JOIN cm_pi_company_clinical_trial_map cpcctm
+    ON toh.pi_comp =  cpcctm.PI_COMP_ID
+    LEFT OUTER JOIN gxd.cm_clinical_trial_mst cctm
+    ON cpcctm.CLINICAL_TRIAL_ID = cctm.CLINICAL_TRIAL_ID
     WHERE ghl.SAMPLE_ID = '{sample_id}' AND ghl.ANAL_STATUS = '102'
     """
     return query
@@ -40,10 +46,11 @@ def search_info(sample_id, directory) :
 
     tbl = getinfo(sample_id)
     if tbl.shape[0] == 0 :
-        return None, None, None, None
+        return None, None, None, None, None
     subname = tbl.sub_name[0]
     patient = tbl.PATIENT_NO[0]
     anal_type = "eWES" if tbl.PRJ_TYPE[0] == 'EWES' else tbl.PRJ_TYPE[0]
+    title = tbl.CLINICAL_TRIAL_NAME[0]
 
     if tbl.timepoint[0] == 'REGIST':
         timepoint = 'Registration'
@@ -66,7 +73,7 @@ def search_info(sample_id, directory) :
         anal_dir = None
     else :
         anal_dir = fcDirs[-1]
-    return anal_dir, anal_type, timepoint, patient
+    return anal_dir, anal_type, timepoint, patient, title
 
 def create_link(linkDir, FILES):
 

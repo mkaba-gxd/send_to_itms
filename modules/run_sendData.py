@@ -113,7 +113,7 @@ def run_sendData(args):
                 Cmd = f"echo -ne '' > {ckspath} && cd {transfer}/{now_str} && md5sum GxD/{item['patient_no']}/{item['timepoint']}/WTS/* > {ckspath} "
             qsubCmd = f"/data1/apps/sge/bin/lx-amd64/qsub -N CS_{now_str} -q all.q -pe smp 2 -o /dev/null -e /dev/null << EOF\n{Cmd}\nEOF"
             os.system(qsubCmd)
-            os.system("sleep 0.1")
+            os.system("sleep 1")
 
     if df_drop.shape[0] == 0 :
         init("Link fails in all samples.")

@@ -20,6 +20,7 @@ def main():
     parser.add_argument("--sample","-s", required=False, help="sample ID", default=None)
     parser.add_argument("--directory","-d", required=False, help="parent analytical directory", default="/data1/data/result")
     parser.add_argument("--transfer","-t", required=False, help="working directory", default="/data1/work/send_to_ITMS")
+    parser.add_argument("--preparation","-p", required=False, help="Preparation only", action='store_true')
     parser.add_argument('--version','-v', action='version', version=f'%(prog)s {VERSION}')
     args = parser.parse_args()
     run_sendData(args)

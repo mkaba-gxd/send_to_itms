@@ -10,6 +10,7 @@ def run_sendData(args):
     sample_id = args.sample
     directory = Path(args.directory)
     transfer = Path(args.transfer)
+    preparation = args.preparation
 
     now = datetime.datetime.now()
     now_str = str(now.strftime("%Y%m%d%H%M%S"))
@@ -79,22 +80,30 @@ def run_sendData(args):
             FQ2 = os.path.realpath( os.path.join(rawDir,'Fastq',item['sample_id'] + '.tumour.R2.fastq.gz') )
             BAM = os.path.join(rawDir,'Preprocessing','align',item['sample_id'] + '.tumour.aligned.bam')
             VCF = os.path.join(rawDir,'SNV','somatic',item['sample_id'] + '_mutect2_freebayes_lofreq_vote_res.exome.vcf')
-            JSON = os.path.join(rawDir,'Summary',item['sample_id']+'.report.json')
-            SUM = []
-            for subname in ['cnv.exome', 'msi.exome', 'snv.exome', 'snv.target', 'tmb.exome'] :
-                SUM.append(os.path.join(rawDir,'Summary','.'.join([item['sample_id'],'summarized',subname,'tsv'])))
-            FILES = [ FQ1, FQ2, BAM, VCF, JSON ] + SUM
+
+            if preparation :
+                FILES = [ FQ1, FQ2, BAM, VCF ]
+            else :
+                JSON = os.path.join(rawDir,'Summary',item['sample_id']+'.report.json')
+                SUM = []
+                for subname in ['cnv.exome', 'msi.exome', 'snv.exome', 'snv.target', 'tmb.exome'] :
+                    SUM.append(os.path.join(rawDir,'Summary','.'.join([item['sample_id'],'summarized',subname,'tsv'])))
+                FILES = [ FQ1, FQ2, BAM, VCF, JSON ] + SUM
 
         elif item['anal_type'] == 'WTS':
             linkDir = os.path.join(transfer, now_str, 'GxD', item['patient_no'], item['timepoint'], 'WTS')
             FQ1 = os.path.realpath( os.path.join(rawDir,'Fastq',item['sample_id'] + '.R1.fastq.gz') )
             FQ2 = os.path.realpath( os.path.join(rawDir,'Fastq',item['sample_id'] + '.R2.fastq.gz') )
             BAM = os.path.join(rawDir,'Expression','STAR_align_exp',item['sample_id'] + '.Aligned.sortedByCoord.out.bam')
-            JSON = os.path.join(rawDir,'Summary',item['sample_id']+'.report.json')
-            SUM = []
-            for subname in ['expression', 'fusion', 'splice'] :
-                SUM.append(os.path.join(rawDir,'Summary','.'.join([item['sample_id'],'summarized',subname,'tsv'])))
-            FILES = [ FQ1, FQ2, BAM, JSON ] + SUM
+
+            if preparation :
+                FILES = [ FQ1, FQ2, BAM ]
+            else :
+                JSON = os.path.join(rawDir,'Summary',item['sample_id']+'.report.json')
+                SUM = []
+                for subname in ['expression', 'fusion', 'splice'] :
+                    SUM.append(os.path.join(rawDir,'Summary','.'.join([item['sample_id'],'summarized',subname,'tsv'])))
+                FILES = [ FQ1, FQ2, BAM, JSON ] + SUM
 
         else :
             df_drop = df_drop[ df_drop['sample_id']!=item['sample_id'] ]
@@ -106,14 +115,15 @@ def run_sendData(args):
             remove_upstream(Path(linkDir), transfer)
             df_drop = df_drop[ df_drop['sample_id']!=item['sample_id'] ]
         else :
-            ckspath = os.path.join(transfer, now_str, 'checksum.' + str(i))
-            if item['anal_type'] == 'eWES':
-                Cmd = f"echo -ne '' > {ckspath} && cd {transfer}/{now_str} && md5sum GxD/{item['patient_no']}/{item['timepoint']}/WES/* > {ckspath} "
-            elif item['anal_type'] == 'WTS':
-                Cmd = f"echo -ne '' > {ckspath} && cd {transfer}/{now_str} && md5sum GxD/{item['patient_no']}/{item['timepoint']}/WTS/* > {ckspath} "
-            qsubCmd = f"/data1/apps/sge/bin/lx-amd64/qsub -N CS_{now_str} -q all.q -pe smp 2 -o /dev/null -e /dev/null << EOF\n{Cmd}\nEOF"
-            os.system(qsubCmd)
-            os.system("sleep 1")
+            if not preparation :
+                ckspath = os.path.join(transfer, now_str, 'checksum.' + str(i))
+                if item['anal_type'] == 'eWES':
+                    Cmd = f"echo -ne '' > {ckspath} && cd {transfer}/{now_str} && md5sum GxD/{item['patient_no']}/{item['timepoint']}/WES/* > {ckspath} "
+                elif item['anal_type'] == 'WTS':
+                    Cmd = f"echo -ne '' > {ckspath} && cd {transfer}/{now_str} && md5sum GxD/{item['patient_no']}/{item['timepoint']}/WTS/* > {ckspath} "
+                qsubCmd = f"/data1/apps/sge/bin/lx-amd64/qsub -N CS_{now_str} -q all.q -pe smp 2 -o /dev/null -e /dev/null << EOF\n{Cmd}\nEOF"
+                os.system(qsubCmd)
+                os.system("sleep 1")
 
     if df_drop.shape[0] == 0 :
         init("Link fails in all samples.")
@@ -124,16 +134,18 @@ def run_sendData(args):
     except NameError:
         pass
 
-    mgCmd = f"cd {transfer}/{now_str} && cat checksum.[0-9]* | sort -k2,2 > checksum.txt && rm checksum.[0-9]* && "
-    calCmd = "FILE_NUM_CAL=\`ls -d GxD/*/*/* | cut -f4 -d '/' | sort | uniq -c | awk 'BEGIN{TOTAL=0}{if($2==\"WES\"){TOTAL+=10*$1}else if($2==\"WTS\"){TOTAL+=7*$1}}END{print TOTAL}'\` && "
-    actCmd = "FILE_NUM_ACT=\`ls GxD/*/*/*/* | wc -l\` && "
-    sumCmd = "FILE_NUM_SUM=\`cat checksum.txt | wc -l\` && "
-    ckCmd = "if [ $FILE_NUM_CAL -ne $FILE_NUM_ACT ]; then echo 'Discrepancy in number of files.' >> error.log; mv GxD GxD_error; elif [ $FILE_NUM_SUM -ne $FILE_NUM_CAL ]; then echo 'Checksum missing' >> error.log; mv GxD GxD_error; fi "
-    Cmd = mgCmd + calCmd + actCmd + sumCmd + ckCmd
-    qsubCmd = f"/data1/apps/sge/bin/lx-amd64/qsub -hold_jid CS_{now_str} -N MG_{now_str} -q all.q -pe smp 2 -o /dev/null -e /dev/null << EOF\n{Cmd}\nEOF"
-    os.system(qsubCmd)
+    if not preparation :
+        mgCmd = f"cd {transfer}/{now_str} && cat checksum.[0-9]* | sort -k2,2 > checksum.txt && rm checksum.[0-9]* && "
+        calCmd = "FILE_NUM_CAL=\`ls -d GxD/*/*/* | cut -f4 -d '/' | sort | uniq -c | awk 'BEGIN{TOTAL=0}{if($2==\"WES\"){TOTAL+=10*$1}else if($2==\"WTS\"){TOTAL+=7*$1}}END{print TOTAL}'\` && "
+        actCmd = "FILE_NUM_ACT=\`ls GxD/*/*/*/* | wc -l\` && "
+        sumCmd = "FILE_NUM_SUM=\`cat checksum.txt | wc -l\` && "
+        ckCmd = "if [ $FILE_NUM_CAL -ne $FILE_NUM_ACT ]; then echo 'Discrepancy in number of files.' >> error.log; mv GxD GxD_error; elif [ $FILE_NUM_SUM -ne $FILE_NUM_CAL ]; then echo 'Checksum missing' >> error.log; mv GxD GxD_error; fi "
+        Cmd = mgCmd + calCmd + actCmd + sumCmd + ckCmd
+        qsubCmd = f"/data1/apps/sge/bin/lx-amd64/qsub -hold_jid CS_{now_str} -N MG_{now_str} -q all.q -pe smp 2 -o /dev/null -e /dev/null << EOF\n{Cmd}\nEOF"
+        os.system(qsubCmd)
 
     print("After confirming the completion of all jobs, transfer the created data with the following command.")
     print(f"rsync -avLzu {transfer}/{now_str}/GxD /media/usb/cap/")
-    print(f"cat {transfer}/{now_str}/checksum.txt >> /media/usb/cap/checksum.txt")
+    if not preparation :
+        print(f"cat {transfer}/{now_str}/checksum.txt >> /media/usb/cap/checksum.txt")
 

@@ -61,5 +61,6 @@ send_to_itms --sample <送付するサンプルID>
 （データ転送には時間がかかるので、nohupでのバックグラウンド実行を推奨）\
 ⇒ すべてのジョブが完了したら、\<TRANSFER\>/\<timestamp\>/checksum.txt の /media/usb/cap/checksum.txt への追記を実施する。
 
-preparationオプションを付加した場合は大きいデータ(fastq.gz,bam,vcf)のシンボリックリンクの作成のみ実行する。
+※ ANAL_STATUSが102でない、または CLINICAL_TRIAL_NAMEが「MONSTAR-SCREEN-3」でないものが含まれている場合、作業続行するかどうか聞かれる。Yesを選択した場合は当該検体を除いて作業を続行し、Noを選択すると作業を中断する。\
+※ preparationオプションを付加した場合は大きいデータ(fastq.gz,bam,vcf)のシンボリックリンクの作成のみ実行する。
 

@@ -121,7 +121,7 @@ def run_sendData(args):
                     Cmd = f"echo -ne '' > {ckspath} && cd {transfer}/{now_str} && md5sum GxD/{item['patient_no']}/{item['timepoint']}/WES/* > {ckspath} "
                 elif item['anal_type'] == 'WTS':
                     Cmd = f"echo -ne '' > {ckspath} && cd {transfer}/{now_str} && md5sum GxD/{item['patient_no']}/{item['timepoint']}/WTS/* > {ckspath} "
-                qsubCmd = f"/data1/apps/sge/bin/lx-amd64/qsub -N CS_{now_str} -q all.q -pe smp 4 -o /dev/null -e /dev/null << EOF\n{Cmd}\nEOF"
+                qsubCmd = f"/data1/apps/sge/bin/lx-amd64/qsub -N CS_{now_str} -q all.q -pe smp 6 -o /dev/null -e /dev/null << EOF\n{Cmd}\nEOF"
                 os.system(qsubCmd)
                 os.system("sleep 1")
 
